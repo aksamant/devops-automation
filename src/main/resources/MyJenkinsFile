@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+    tools {
+        maven '3.9.9'
+    }
+    stages{
+        stage('Build Maven'){
+            steps{
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/aksamant/devops-automation']]])
+                sh 'mvn clean install'
+            }
+        }
+        stage('Build docker image'){
+            steps{
+                script{
+                    sh 'docker build -t aksamant81/spring-boot-docker-tag .'
+                }
+            }
+        }
+        stage('Push image to Hub'){
+            steps{
+                script{
+                    withCredentials([string(credentialsId: 'dockerhub-pwd1', variable: 'dockerhubpwd1')]) {
+
+                   sh 'docker login -u aksamant81 -p ${dockerhubpwd1}'
+                   sh 'docker push aksamant81/spring-boot-docker-tag'
+                 }
+            }
+        }
+        }
+    }
+}
